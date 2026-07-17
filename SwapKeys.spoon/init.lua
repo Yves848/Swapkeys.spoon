@@ -16,24 +16,18 @@ obj.license = "MIT - https://opensource.org/licenses/MIT"
 local keyDown = hs.eventtap.event.types.keyDown
 -- Variables internes (à utiliser si besoin)
 local internal = {
-	remapEnabled = true,
+	remapEnabled = false,
 	remapTap = nil,
 	menuIcon = nil,
 }
 
---local eventtap = hs.eventtap
---local keydown  = hs.eventtap.event.types.keyDown
-
 local function remapFunction(e)
-	-- logger.i("remapFuntion")
-
 	if not internal.remapEnabled then
 		return false
 	end
 
 	local code = e:getKeyCode()
 	local flags = e:getFlags()
-	-- logger.i(code)
 	if code == 10 then
 		if flags.shift then
 			hs.eventtap.keyStrokes(">")
@@ -51,22 +45,13 @@ local function remapFunction(e)
 	end
 	return false
 end
---- MonSpoon:init()
---- Fonction d'initialisation du spoon.
-function obj:init()
-	--hs.alert.show("SwapKeys initialisé!")
-end
+function obj:init() end
 
---- MonSpoon:start()
---- Démarre le spoon et lance ses fonctionnalités.
 function obj:start()
-	--hs.alert.show("SwapKeys démarré!")
 	internal.remapTap = hs.eventtap.new({ keyDown }, remapFunction)
 	internal.remapTap:start()
 end
 
---- SwapKeys:toggle()
---- Met en pause ou redémarre le swap des touches
 function obj:toggle()
 	internal.remapEnabled = not internal.remapEnabled
 	if not internal.remapEnabled then
@@ -74,15 +59,12 @@ function obj:toggle()
 	else
 		hs.alert.show("SwapKeys en fonctionnement!")
 	end
-	-- Ajoutez ici le code pour arrêter votre spoon
 end
 
 function obj:isEnabled()
 	return internal.remapEnabled
 end
 
---- MonSpoon:stop()
---- Arrête le spoon et nettoie les ressources.
 function obj:stop()
 	--hs.alert.show("SwapKeys en arrêté!")
 	if internal.remapTap then
