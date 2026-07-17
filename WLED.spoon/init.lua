@@ -376,61 +376,135 @@ function obj:rebuildMenu()
 end
 
 ----------------------------------------------------------------------
--- Chooser
+-- Chooser (navigation par niveaux : modules → catégorie → valeur)
 ----------------------------------------------------------------------
 
-function obj:buildChoices()
-	-- IMPORTANT : hs.chooser ne sait convertir que des valeurs simples
-	-- (string/number/bool). On ne peut PAS mettre de fonction dans un choix.
-	-- On stocke donc les actions dans internal.actions et on ne met qu'un `id`.
-	local choices = {}
+-- hs.chooser ne stocke que des valeurs simples dans un choix (string/
+-- number/bool) : on ne peut PAS y mettre de fonction. On garde donc les
+-- actions dans internal.actions et chaque choix ne porte qu'un `id`.
+-- Une action est de la forme { kind, fn } :
+--   kind = "run" -> fn() exécute la commande, puis le chooser reste fermé.
+--   kind = "nav" -> fn() renvoie une NOUVELLE liste de choix ; on rouvre le
+--                   chooser avec celle-ci (descente dans un sous-menu ou
+--                   retour). C'est ce qui simule un menu à plusieurs niveaux.
+local rootBuilder, deviceBuilder
+
+-- Réinitialise la table d'actions et renvoie (choices, add) pour un niveau.
+local function makeAdder()
 	internal.actions = {}
-	local function add(text, fn, sub)
-		internal.actions[#internal.actions + 1] = fn
-		choices[#choices + 1] = { text = text, subText = sub, id = #internal.actions }
+	local choices = {}
+	local function add(text, subText, kind, fn)
+		internal.actions[#internal.actions + 1] = { kind = kind, fn = fn }
+		choices[#choices + 1] = { text = text, subText = subText, id = #internal.actions }
 	end
-	for _, dev in ipairs(sortedDevices()) do
-		local host, dn = dev.host, (dev.name or dev.host)
-		add(dn .. " — Allumer", function() obj:setOn(host, true) end)
-		add(dn .. " — Éteindre", function() obj:setOn(host, false) end)
-		add(dn .. " — Basculer", function() obj:toggle(host) end)
-		for _, b in ipairs(obj.brightnessLevels) do
-			add(dn .. " — Luminosité " .. b[1], function() obj:setBrightness(host, b[2]) end)
+	return choices, add
+end
+
+-- Sous-liste « feuille » : « ← Retour » vers le module, puis des actions run.
+-- `items` = liste de { text, subText?, fn }.
+local function leafBuilder(dev, items)
+	return function()
+		local choices, add = makeAdder()
+		add("← Retour", dev.name or dev.host, "nav", function() return deviceBuilder(dev) end)
+		for _, it in ipairs(items) do
+			add(it.text, it.subText, "run", it.fn)
 		end
-		for _, c in ipairs(obj.colors) do
-			add(dn .. " — Couleur : " .. c[1], function() obj:setColor(host, c[2]) end)
-		end
-		for _, p in ipairs(dev.presets or {}) do
-			add(dn .. " — Preset : " .. p.name, function() obj:setPreset(host, p.id) end, "preset " .. p.id)
-		end
-		for i, fx in ipairs(dev.effects or {}) do
-			add(dn .. " — Effet : " .. fx, function() obj:setEffect(host, i - 1) end, "fx " .. (i - 1))
-		end
-		for i, pal in ipairs(dev.palettes or {}) do
-			add(dn .. " — Palette : " .. pal, function() obj:setPalette(host, i - 1) end, "palette " .. (i - 1))
-		end
+		return choices
 	end
-	if #sortedDevices() > 0 then
-		add("★ Tout allumer", function() obj:allOn() end)
-		add("★ Tout éteindre", function() obj:allOff() end)
+end
+
+-- Niveau 2 : le menu d'un module (catégories filtrables).
+deviceBuilder = function(dev)
+	local host = dev.host
+	local dn = dev.name or dev.host
+	local choices, add = makeAdder()
+	add("← Retour", "liste des modules", "nav", rootBuilder)
+	add("Allumer", dn, "run", function() obj:setOn(host, true) end)
+	add("Éteindre", dn, "run", function() obj:setOn(host, false) end)
+	add("Basculer", dn, "run", function() obj:toggle(host) end)
+
+	local bri = {}
+	for _, b in ipairs(obj.brightnessLevels) do
+		bri[#bri + 1] = { text = "Luminosité " .. b[1], fn = function() obj:setBrightness(host, b[2]) end }
 	end
+	add("Luminosité ▸", "choisir un niveau", "nav", leafBuilder(dev, bri))
+
+	local col = {}
+	for _, c in ipairs(obj.colors) do
+		col[#col + 1] = { text = c[1], fn = function() obj:setColor(host, c[2]) end }
+	end
+	add("Couleur ▸", "palette rapide", "nav", leafBuilder(dev, col))
+
+	if dev.presets and #dev.presets > 0 then
+		local ps = {}
+		for _, p in ipairs(dev.presets) do
+			ps[#ps + 1] = { text = p.name, subText = "preset " .. p.id, fn = function() obj:setPreset(host, p.id) end }
+		end
+		add("Presets ▸", #dev.presets .. " enregistré(s)", "nav", leafBuilder(dev, ps))
+	end
+
+	if dev.effects and #dev.effects > 0 then
+		local fx = {}
+		for i, name in ipairs(dev.effects) do
+			fx[#fx + 1] = { text = name, subText = "fx " .. (i - 1), fn = function() obj:setEffect(host, i - 1) end }
+		end
+		add("Effets ▸", #dev.effects .. " disponibles", "nav", leafBuilder(dev, fx))
+	end
+
+	if dev.palettes and #dev.palettes > 0 then
+		local pal = {}
+		for i, name in ipairs(dev.palettes) do
+			pal[#pal + 1] = { text = name, subText = "palette " .. (i - 1), fn = function() obj:setPalette(host, i - 1) end }
+		end
+		add("Palettes ▸", #dev.palettes .. " disponibles", "nav", leafBuilder(dev, pal))
+	end
+
 	return choices
+end
+
+-- Niveau 1 (racine) : les modules + les actions globales.
+rootBuilder = function()
+	local choices, add = makeAdder()
+	local devices = sortedDevices()
+	if #devices == 0 then
+		add("Aucun module WLED trouvé", "⟳ pour relancer une recherche", "run", function() obj:refreshAll() end)
+	else
+		for _, dev in ipairs(devices) do
+			local on = dev.state and dev.state.on
+			local etat = dev.online == false and "hors ligne" or (on and "● allumé" or "◯ éteint")
+			add(dev.name or dev.host, etat .. " · " .. dev.host, "nav", function() return deviceBuilder(dev) end)
+		end
+		add("★ Tout allumer", "tous les modules", "run", function() obj:allOn() end)
+		add("★ Tout éteindre", "tous les modules", "run", function() obj:allOff() end)
+	end
+	add("⟳ Rafraîchir", "relancer la découverte et l'état", "run", function() obj:refreshAll() end)
+	return choices
+end
+
+-- (Ré)affiche le chooser avec la liste produite par `builder`.
+function obj:_navTo(builder)
+	local choices = builder()
+	internal.chooser:choices(choices)
+	internal.chooser:query("") -- repart d'une recherche vide à chaque niveau
+	internal.chooser:show()
 end
 
 function obj:showChooser()
 	if not internal.chooser then
 		internal.chooser = hs.chooser.new(function(choice)
-			if choice and choice.id and internal.actions[choice.id] then
-				internal.actions[choice.id]()
+			if not choice then return end -- Échap / clic hors zone : on ne fait rien
+			local act = internal.actions[choice.id]
+			if not act then return end
+			if act.kind == "nav" then
+				obj:_navTo(act.fn) -- descente ou retour : on rouvre le chooser
+			else
+				act.fn() -- action terminale : on exécute et le chooser reste fermé
 			end
 		end)
 		internal.chooser:searchSubText(true)
 	end
-	local choices = obj:buildChoices()
-	dbg("showChooser: devices=", #sortedDevices(), "choices=", #choices)
-	internal.chooser:choices(choices)
-	internal.chooser:query("")
-	internal.chooser:show()
+	dbg("showChooser: devices=", #sortedDevices())
+	obj:_navTo(rootBuilder) -- toujours (r)ouvrir sur la racine
 end
 
 ----------------------------------------------------------------------
