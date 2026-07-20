@@ -66,6 +66,14 @@ obj.sections = {
     { "⌃⌥⌘⇧ =", "Envoyer la fenêtre à l'autre écran (+ suivre)" },
     { "⌃⌥⇧ =",  "Déplacer le Space entier vers l'autre écran" },
   } },
+  { title = "Placement — Magnet / Rectangle", accent = "#3fb6c9", items = {
+    { "⌘⌥ ← → ↑ ↓", "Moitié gauche / droite / haut / bas" },
+    { "⌘⌥ U I J K",  "Quarts : haut-g / haut-d / bas-g / bas-d" },
+    { "⌘⌥ D F G",    "Tiers : gauche / centre / droite" },
+    { "⌘⌥ E / T",    "Deux-tiers : gauche / droite" },
+    { "⌘⌥ ↩",        "Plein écran (zone utile)" },
+    { "⌘⌥ C",        "Centrer (60 %)" },
+  } },
   { title = "Fenêtre au pixel (flottantes)", accent = "#e0a13a", items = {
     { "⇧⌥ ← → ↑ ↓", "Déplacer par pas (50 px)" },
     { "⌘⌃ ← →",     "Redimensionner — largeur" },

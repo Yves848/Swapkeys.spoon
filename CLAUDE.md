@@ -19,6 +19,7 @@ must be re-synced (and Hammerspoon reloaded) to take effect.
 - **SwapKeys** — remaps keystrokes via `hs.eventtap` (`<`/`>`, `@`/`#`), toggleable.
 - **NumpadDot** — forces the numpad `.` to emit a period regardless of layout.
 - **WindowStep** — step-move / step-resize the focused window from the keyboard.
+- **WindowSnap** — Magnet/Rectangle-style placement (halves, quarters, thirds, maximize, center); floats the window via yabai first.
 - **Yabai** — drives the yabai tiling WM (focus/swap/warp, Spaces, multi-display, layout cycle) via `hs.task`.
 - **CheatSheet** — floating `hs.webview` popup (toggle hotkey) listing all shortcuts from a configurable `sections` table.
 - **WLED** — mDNS discovery + control of WLED devices (menubar + chooser).
