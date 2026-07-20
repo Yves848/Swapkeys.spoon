@@ -34,14 +34,19 @@
 ---     -- Spaces (bureaux virtuels)
 ---     space_1 = { space, "1" }, space_2 = { space, "2" },    -- focus Space N
 ---     send_1  = { send, "1" },                               -- envoyer la fenêtre au Space N
----     space_next = { space, "]" }, space_prev = { space, "[" },
----     send_next  = { send,  "]" }, send_prev  = { send,  "[" },
+---     space_prev = { space, "," }, space_next = { space, ";" },
+---     send_prev  = { send,  "," }, send_next  = { send,  ";" },
 ---     space_create = { space, "n" }, space_destroy = { space, "w" },
----     -- Écrans (multi-moniteurs)
----     display_next = { space, "." }, display_prev = { space, "," },
----     send_display_next = { send, "." }, send_display_prev = { send, "," },
----     space_display_next = { { "ctrl", "alt", "shift" }, "." },  -- déplacer le Space sur l'autre écran
+---     -- Écrans (multi-moniteurs) — « = » = l'autre écran, le modif dit quoi déplacer
+---     display_next       = { space, "=" },                        -- focus écran
+---     send_display_next  = { send,  "=" },                        -- y envoyer la fenêtre
+---     space_display_next = { { "ctrl", "alt", "shift" }, "=" },   -- y déplacer le Space
 ---   })
+---
+--- Choix des touches : les actions par symbole doivent utiliser des touches PRÉSENTES
+--- dans le keymap actif (cf. hs.keycodes.map / hs.keycodes.currentLayout()). Sur AZERTY
+--- belge, « , ; = » sont natives alors que « [ ] . » ne le sont pas (HS retombe sur des
+--- keycodes US → touches mortes). Adaptez le mapping à votre disposition clavier.
 
 local obj = {}
 obj.__index = obj
