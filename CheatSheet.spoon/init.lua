@@ -131,13 +131,13 @@ function obj:_html()
 
   return [[<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { background: transparent; }
+    html, body { background: transparent; overflow: hidden; }
     body {
       font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
-      color: #e6e9ef; padding: 4px; -webkit-user-select: none; user-select: none;
+      color: #e6e9ef; padding: 14px; -webkit-user-select: none; user-select: none;
     }
     .panel {
-      background: rgba(24, 27, 34, 0.96); border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(24, 27, 34, 0.97); border: 1px solid rgba(255,255,255,0.08);
       border-radius: 16px; padding: 16px 18px 14px;
       box-shadow: 0 18px 60px rgba(0,0,0,0.55);
     }
@@ -175,7 +175,31 @@ function obj:_ensureModal()
   self._modal:bind({}, "escape", function() self:hide() end)
 end
 
+-- Marge transparente (px) autour du panneau, de chaque côté — laisse respirer l'ombre CSS
+-- et sert au calcul de la hauteur finale. Doit valoir le `padding` du <body>.
+local BODY_MARGIN = 14
+
+-- Ajuste la hauteur de la fenêtre à celle réelle du panneau (+ marges) et la re-centre
+-- verticalement sur l'écran `scr`. Appelé une fois le chargement terminé.
+function obj:_fitHeight(scr, w)
+  if not self._webview then return end
+  self._webview:evaluateJavaScript(
+    "Math.ceil(document.querySelector('.panel').getBoundingClientRect().height)",
+    function(res)
+      local ch = tonumber(res)
+      if not ch or not self._webview then return end
+      local nh = ch + 2 * BODY_MARGIN
+      self._webview:frame({
+        x = scr.x + (scr.w - w) / 2,
+        y = scr.y + (scr.h - nh) / 2,
+        w = w, h = nh,
+      })
+    end)
+end
+
 --- Affiche la fenêtre (recrée le webview à chaque fois → contenu toujours à jour).
+--- La hauteur est ajustée au contenu réel une fois le HTML chargé (navigationCallback →
+--- evaluateJavaScript) : pas d'espace vide, centrage vertical exact.
 function obj:show()
   self:_ensureModal()
   if self._webview then self:hide() end
@@ -190,9 +214,13 @@ function obj:show()
   self._webview = hs.webview.new(rect)
     :windowStyle(masks.borderless | masks.nonactivating)
     :level(hs.drawing.windowLevels.modalPanel)
-    :shadow(true)
+    :shadow(false) -- pas d'ombre native (rectangulaire) → ombre gérée en CSS sur le panneau
     :transparent(true)
     :allowTextEntry(false)
+    :navigationCallback(function(action)
+      -- Le contenu est mis en page → on peut mesurer et ajuster la hauteur.
+      if action == "didFinishNavigation" then self:_fitHeight(scr, w) end
+    end)
     :html(self:_html())
   self._webview:show()
   self._modal:enter() -- capte Échap globalement tant que la fenêtre est visible
