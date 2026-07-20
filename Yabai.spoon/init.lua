@@ -62,13 +62,22 @@ obj.yabai = "/opt/homebrew/bin/yabai"
 --- Lance `yabai -m <args…>` sans bloquer. `andThen` (optionnel) est appelé une fois
 --- la commande terminée — sert à enchaîner deux commandes (ex. envoyer une fenêtre
 --- vers un Space puis suivre ce Space).
+-- Messages d'erreur yabai *bénins* à ne pas afficher : impasses de navigation quand il
+-- n'y a pas de fenêtre/écran voisin dans la direction demandée (« could not locate a
+-- {eastward,…} managed window », « … display »). Ce sont des non-événements, pas des
+-- erreurs — les remonter en alerte est du bruit.
+local function isBenignError(msg)
+  return msg:match("could not locate") ~= nil
+end
+
 function obj:_run(args, andThen)
   local task = hs.task.new(self.yabai, function(code, _out, err)
     -- yabai renvoie un code ≠ 0 + un message sur stderr en cas d'échec (fenêtre
     -- introuvable, Space inexistant, écran unique, SA non chargée…). On l'affiche
-    -- discrètement.
+    -- discrètement, sauf pour les impasses de navigation (voir isBenignError).
     if code ~= 0 and err and #err > 0 then
-      hs.alert.show("yabai : " .. err:gsub("%s+$", ""))
+      local msg = err:gsub("%s+$", "")
+      if not isBenignError(msg) then hs.alert.show("yabai : " .. msg) end
     end
     if andThen then andThen() end
   end, args)
@@ -80,7 +89,10 @@ end
 function obj:_query(args, cb)
   local task = hs.task.new(self.yabai, function(code, out, err)
     if code ~= 0 then
-      if err and #err > 0 then hs.alert.show("yabai : " .. err:gsub("%s+$", "")) end
+      if err and #err > 0 then
+        local msg = err:gsub("%s+$", "")
+        if not isBenignError(msg) then hs.alert.show("yabai : " .. msg) end
+      end
       return
     end
     local ok, data = pcall(hs.json.decode, out)
