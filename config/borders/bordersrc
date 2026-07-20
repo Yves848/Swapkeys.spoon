@@ -1,0 +1,13 @@
+#!/bin/bash
+# JankyBorders — anneau de focus autour de la fenêtre active.
+# Démarré comme service (brew services start felixkratz/formulae/borders) ; ce fichier
+# est exécuté au lancement de `borders`. Doc : https://github.com/FelixKratz/JankyBorders
+#
+# Particulièrement utile en mode « manuel » (float) : rien d'autre n'indique le focus.
+
+borders \
+  style=round \
+  width=6.0 \
+  hidpi=on \
+  active_color=0xff7aa2f7 \
+  inactive_color=0xff3b3f51

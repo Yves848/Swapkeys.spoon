@@ -25,6 +25,10 @@ must be re-synced (and Hammerspoon reloaded) to take effect.
 - **WLED** — mDNS discovery + control of WLED devices (menubar + chooser).
 - **LedControl** — client for the LedControl FastAPI service (menubar, scenes, hotkeys).
 
+Companion window-manager configs (yabai `yabairc`, JankyBorders `bordersrc`, SketchyBar)
+are versioned under `config/` — a git mirror of their live copies in `~/.config`
+(see `config/README.md`).
+
 ## Architecture
 
 Every Spoon follows the same Hammerspoon module contract: `init.lua` returns a table `obj`

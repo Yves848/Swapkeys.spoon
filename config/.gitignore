@@ -1,0 +1,4 @@
+# Artefacts compilés (regénérés via `make` / SbarLua) — ne pas versionner
+**/bin/
+*.o
+*.so

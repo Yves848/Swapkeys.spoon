@@ -1,0 +1,76 @@
+#!/usr/bin/env sh
+# Configuration yabai — tiling bsp + gestion des Spaces.
+# Fork asmvik/yabai (support macOS 26 Tahoe) : brew install asmvik/formulae/yabai
+#
+# Les raccourcis clavier ne sont PAS ici : ils vivent dans Hammerspoon
+# (~/.hammerspoon → Yabai.spoon), qui pilote yabai via `hs.task`. Pas de skhd.
+
+# --- Scripting addition (nécessaire aux Spaces : focus / déplacer une fenêtre) -------
+# Chargée à chaque (re)démarrage du Dock. Requiert SIP partiellement désactivé + une
+# règle sudoers NOPASSWD pour `yabai --load-sa` (voir la doc yabai).
+yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
+sudo yabai --load-sa
+
+# --- Agencement global ---------------------------------------------------------------
+# Mode MANUEL (façon Magnet/Rectangle) : layout `float` → yabai n'agence PAS les
+# fenêtres (elles restent où on les met). Le placement se fait au clavier via
+# Hammerspoon/WindowSnap (⌘⌥ + touche). yabai continue de gérer Spaces, écrans et règles.
+# Pour retuiler ponctuellement un Space : ⌃⌥⌘ espace (cycle bsp/stack/float) côté HS.
+# Les réglages bsp ci-dessous (placement, ratio, marges) ne s'appliquent qu'aux Spaces
+# éventuellement repassés en bsp.
+yabai -m config layout                 float
+yabai -m config window_placement       second_child
+yabai -m config auto_balance           off
+yabai -m config split_ratio            0.50
+
+# Marges / gouttières (px).
+yabai -m config top_padding            8
+yabai -m config bottom_padding         8
+yabai -m config left_padding           8
+yabai -m config right_padding          8
+yabai -m config window_gap             8
+
+# Le focus suit / précède la souris (au goût — désactivable).
+yabai -m config mouse_follows_focus    off
+yabai -m config focus_follows_mouse    off
+
+# Souris : déplacer (Alt+glisser gauche) / redimensionner (Alt+glisser droit).
+yabai -m config mouse_modifier         alt
+yabai -m config mouse_action1          move
+yabai -m config mouse_action2          resize
+
+# --- Thème / effets visuels (nécessite la scripting addition) -------------------------
+# Opacité : fenêtres non-focalisées légèrement atténuées → le focus ressort.
+yabai -m config window_opacity            on
+yabai -m config active_window_opacity     1.0
+yabai -m config normal_window_opacity     0.90
+yabai -m config window_opacity_duration   0.15
+# Ombres : uniquement sur les fenêtres flottantes (en mode manuel, ça les couvre toutes).
+yabai -m config window_shadow             float
+# Animations de déplacement / redimensionnement (0 = instantané ; ~0.15 s = fluide).
+# ⚠ Nécessite l'autorisation « Enregistrement de l'écran » pour yabai (Réglages Système →
+#   Confidentialité et sécurité → Enregistrement de l'écran → activer yabai, puis relancer
+#   le service). Tant qu'elle n'est pas accordée, yabai refuse la commande → lignes
+#   commentées pour éviter l'erreur au démarrage. Décommenter une fois la permission donnée.
+# yabai -m config window_animation_duration 0.15
+yabai -m config window_animation_easing   ease_out_circ
+
+# --- Règles float : apps qui ne doivent PAS être tuilées -----------------------------
+# Réglages Système, dialogues, utilitaires macOS.
+yabai -m rule --add app="^Réglages Système$"   manage=off
+yabai -m rule --add app="^System Settings$"    manage=off
+yabai -m rule --add app="^Rechercher$"         manage=off
+yabai -m rule --add app="^Finder$" title="^(Copie|Copy|Déplacement|Move|Informations|Info)" manage=off
+yabai -m rule --add app="^Calculatrice$"       manage=off
+yabai -m rule --add app="^Calculator$"         manage=off
+yabai -m rule --add app="^Trousseau"           manage=off
+
+# Apps utilitaires perso (Avalonia / Photino) — fenêtres flottantes.
+yabai -m rule --add app="^LedControl$"         manage=off
+yabai -m rule --add app="^SoundControl$"       manage=off
+yabai -m rule --add app="^SynologyShares$"     manage=off
+
+# Hammerspoon lui-même (alertes, chooser, console) : jamais tuilé.
+yabai -m rule --add app="^Hammerspoon$"        manage=off
+
+echo "yabai configuration chargée."
