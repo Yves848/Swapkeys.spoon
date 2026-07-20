@@ -130,6 +130,18 @@ function obj:_cycleLayout()
   end)
 end
 
+--- Bascule le Space courant entre pavage automatique (bsp) et manuel/flottant (float).
+--- Contrairement à _cycleLayout, ne passe pas par "stack" : un simple interrupteur à
+--- deux états, avec confirmation.
+function obj:_toggleTiling()
+  self:_query({ "-m", "query", "--spaces", "--space" }, function(data)
+    local toBsp = (data.type ~= "bsp") -- depuis float ou stack → bsp ; depuis bsp → float
+    local target = toBsp and "bsp" or "float"
+    self:_run({ "-m", "space", "--layout", target })
+    hs.alert.show(toBsp and "Pavage automatique (bsp)" or "Manuel — flottant (float)")
+  end)
+end
+
 --- Crée un Space sur l'écran actif puis le focalise (le nouveau Space est ajouté en fin
 --- de liste → on focalise "last").
 function obj:_createSpace()
@@ -154,6 +166,7 @@ end
 ---     toggle_float                    — (dé)flotter la fenêtre et la centrer
 ---     toggle_zoom                     — plein cadre du parent (zoom-fullscreen)
 ---     layout_cycle                    — bsp → stack → float → bsp
+---     layout_toggle                   — bascule pavage auto (bsp) ↔ manuel (float)
 ---     rotate                          — pivoter l'agencement de 90°
 ---     balance                         — rééquilibrer les tailles
 ---   Spaces :
@@ -171,8 +184,9 @@ function obj:bindHotkeys(mapping)
 
   local actions = {
     toggle_float = function() self:_run({ "-m", "window", "--toggle", "float", "--grid", "4:4:1:1:2:2" }) end,
-    toggle_zoom  = function() self:_run({ "-m", "window", "--toggle", "zoom-fullscreen" }) end,
-    layout_cycle = function() self:_cycleLayout() end,
+    toggle_zoom   = function() self:_run({ "-m", "window", "--toggle", "zoom-fullscreen" }) end,
+    layout_cycle  = function() self:_cycleLayout() end,
+    layout_toggle = function() self:_toggleTiling() end,
     rotate       = function() self:_run({ "-m", "space", "--rotate", "90" }) end,
     balance      = function() self:_run({ "-m", "space", "--balance" }) end,
     -- Spaces relatifs et gestion dynamique.

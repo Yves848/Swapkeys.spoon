@@ -37,7 +37,7 @@ obj.license = "MIT"
 -- Titre affiché en haut de la fenêtre.
 obj.title = "Raccourcis Hammerspoon"
 -- Sous-titre (rappel du modèle courant). Mettre "" pour le masquer.
-obj.subtitle = "Mode manuel (float) — rangez avec ⌘⌥ · pavage d'un Space via ⌃⌥⌘ espace"
+obj.subtitle = "Mode manuel (float) — rangez avec ⌘⌥ · bascule pavage auto ↔ manuel : ⌃⌥⌘ T"
 
 -- Dimensions de la fenêtre (px). Ajustées au contenu ; le corps défile si besoin.
 obj.width = 980
@@ -46,6 +46,7 @@ obj.height = 660
 -- Jeu de raccourcis par défaut (config de l'auteur). Surchargeable depuis init.lua.
 obj.sections = {
   { title = "Fenêtres — tiling (yabai)", accent = "#4b9fff", items = {
+    { "⌃⌥⌘ T",       "Basculer pavage auto (bsp) ↔ manuel (float)" },
     { "⌃⌥ ← → ↑ ↓",  "Déplacer le focus vers la fenêtre voisine" },
     { "⌃⌥⇧ ← → ↑ ↓", "Échanger la fenêtre avec sa voisine" },
     { "⌃⌥⌘ ← → ↑ ↓", "Warp — ré-insérer la fenêtre dans l'arbre" },
