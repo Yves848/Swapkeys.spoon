@@ -36,6 +36,8 @@ obj.license = "MIT"
 
 -- Titre affiché en haut de la fenêtre.
 obj.title = "Raccourcis Hammerspoon"
+-- Sous-titre (rappel du modèle courant). Mettre "" pour le masquer.
+obj.subtitle = "Mode manuel (float) — rangez avec ⌘⌥ · pavage d'un Space via ⌃⌥⌘ espace"
 
 -- Dimensions de la fenêtre (px). Ajustées au contenu ; le corps défile si besoin.
 obj.width = 980
@@ -154,6 +156,7 @@ function obj:_html()
     header h1 { font-size: 16px; font-weight: 600; letter-spacing: .2px; }
     header .hint { font-size: 11px; color: #8b93a3; }
     header .hint kbd { font-size: 10px; }
+    .sub { font-size: 11px; color: #8b93a3; margin: -6px 0 11px; }
     .grid { column-count: 3; column-gap: 16px; }
     @media (max-width: 720px) { .grid { column-count: 2; } }
     .card { break-inside: avoid; margin-bottom: 13px; }
@@ -171,8 +174,9 @@ function obj:_html()
     .sep { color: #6b7385; padding: 0 1px; }
   </style></head><body><div class="panel">
     <header><h1>]] .. esc(self.title) .. [[</h1>
-    <span class="hint"><kbd>Échap</kbd> ou <kbd>⌃⌥H</kbd> pour fermer</span></header>
-    <div class="grid">]] .. table.concat(cards) .. [[</div>
+    <span class="hint"><kbd>Échap</kbd> ou <kbd>⌃⌥H</kbd> pour fermer</span></header>]]
+    .. ((self.subtitle and self.subtitle ~= "") and ('<div class="sub">' .. esc(self.subtitle) .. "</div>") or "")
+    .. [[<div class="grid">]] .. table.concat(cards) .. [[</div>
   </div></body></html>]]
 end
 
