@@ -3,7 +3,7 @@ return {
   white = 0xffe2e2e3,
   red = 0xfffc5d7c,
   green = 0xff9ed072,
-  blue = 0xff76cce0,
+  blue = 0xff7aa2f7, -- accent aligné sur l'anneau JankyBorders
   yellow = 0xffe7c664,
   orange = 0xfff39660,
   magenta = 0xffb39df3,

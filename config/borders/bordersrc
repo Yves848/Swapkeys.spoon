@@ -7,7 +7,7 @@
 
 borders \
   style=round \
-  width=6.0 \
+  width=4.0 \
   hidpi=on \
   active_color=0xff7aa2f7 \
   inactive_color=0xff3b3f51
