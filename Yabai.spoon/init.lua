@@ -163,7 +163,7 @@ end
 ---     focus_{west,south,north,east}   — déplacer le focus vers la fenêtre voisine
 ---     swap_{west,south,north,east}    — échanger la fenêtre avec sa voisine
 ---     warp_{west,south,north,east}    — déplacer la fenêtre dans l'arbre (ré-insertion)
----     toggle_float                    — (dé)flotter la fenêtre et la centrer
+---     toggle_float                    — (dé)flotter la fenêtre (géré ↔ flottant)
 ---     toggle_zoom                     — plein cadre du parent (zoom-fullscreen)
 ---     layout_cycle                    — bsp → stack → float → bsp
 ---     layout_toggle                   — bascule pavage auto (bsp) ↔ manuel (float)
@@ -183,7 +183,10 @@ function obj:bindHotkeys(mapping)
   local dirs = { west = "west", south = "south", north = "north", east = "east" }
 
   local actions = {
-    toggle_float = function() self:_run({ "-m", "window", "--toggle", "float", "--grid", "4:4:1:1:2:2" }) end,
+    -- Simple bascule flottant/géré. (Pas de `--grid` : il échoue sur une fenêtre gérée
+    -- — « cannot apply grid layout to a managed window ». Pour centrer/placer une fois
+    -- flottante, utiliser WindowSnap : ⌘⌥C, ⌘⌥ flèches, etc.)
+    toggle_float = function() self:_run({ "-m", "window", "--toggle", "float" }) end,
     toggle_zoom   = function() self:_run({ "-m", "window", "--toggle", "zoom-fullscreen" }) end,
     layout_cycle  = function() self:_cycleLayout() end,
     layout_toggle = function() self:_toggleTiling() end,
