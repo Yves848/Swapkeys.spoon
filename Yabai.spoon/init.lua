@@ -59,6 +59,14 @@ obj.license = "MIT"
 -- Chemin du binaire yabai (Homebrew Apple Silicon par défaut).
 obj.yabai = "/opt/homebrew/bin/yabai"
 
+-- Synchro de l'anneau de focus (JankyBorders) avec l'état flottant/tuilé de la fenêtre
+-- focalisée : voir startBorderSync(). `borders` = chemin du binaire, ou false pour désactiver.
+-- (JankyBorders ne colore globalement que la fenêtre ACTIVE → on ne peut refléter l'état
+-- que de celle-ci.)
+obj.borders = "/opt/homebrew/bin/borders"
+obj.borderFloatColor   = "0xffe0a13a" -- fenêtre flottante / manuelle → ambre
+obj.borderManagedColor = "0xff7aa2f7" -- fenêtre tuilée / gérée (bsp)  → bleu
+
 --- Lance `yabai -m <args…>` sans bloquer. `andThen` (optionnel) est appelé une fois
 --- la commande terminée — sert à enchaîner deux commandes (ex. envoyer une fenêtre
 --- vers un Space puis suivre ce Space).
@@ -137,7 +145,7 @@ function obj:_toggleTiling()
   self:_query({ "-m", "query", "--spaces", "--space" }, function(data)
     local toBsp = (data.type ~= "bsp") -- depuis float ou stack → bsp ; depuis bsp → float
     local target = toBsp and "bsp" or "float"
-    self:_run({ "-m", "space", "--layout", target })
+    self:_run({ "-m", "space", "--layout", target }, function() self:_refreshBorderColor() end)
     hs.alert.show(toBsp and "Pavage automatique (bsp)" or "Manuel — flottant (float)")
   end)
 end
@@ -155,6 +163,33 @@ function obj:_moveSpaceToDisplay(dir)
   self:_run({ "-m", "space", "--display", dir }, function()
     self:_run({ "-m", "display", "--focus", dir })
   end)
+end
+
+--- Colore l'anneau JankyBorders de la fenêtre focalisée selon son état yabai :
+--- flottante → `borderFloatColor`, tuilée/gérée → `borderManagedColor`. No-op si `borders`
+--- n'est pas configuré. `active_color` de JankyBorders étant global, on ne colore que la
+--- fenêtre active — seule granularité possible côté JankyBorders.
+function obj:_refreshBorderColor()
+  if not self.borders then return end
+  self:_query({ "-m", "query", "--windows", "--window" }, function(data)
+    local color = (data["is-floating"] == true) and self.borderFloatColor
+      or self.borderManagedColor
+    hs.task.new(self.borders, nil, { "active_color=" .. color }):start()
+  end)
+end
+
+--- Active la synchro « couleur de l'anneau ↔ état flottant/tuilé » sur les changements de
+--- focus. À appeler une fois depuis init.lua (après bindHotkeys). No-op si `borders` = false.
+--- Les changements d'état SANS changement de focus (toggle_float, layout_toggle) rafraîchissent
+--- déjà la couleur eux-mêmes.
+function obj:startBorderSync()
+  if not self.borders then return self end
+  self._winFilter = hs.window.filter.new(true) -- toutes les fenêtres
+  self._winFilter:subscribe(hs.window.filter.windowFocused, function()
+    self:_refreshBorderColor()
+  end)
+  self:_refreshBorderColor() -- applique l'état courant immédiatement
+  return self
 end
 
 --- bindHotkeys : voir le docstring d'en-tête pour la liste des actions.
@@ -186,7 +221,9 @@ function obj:bindHotkeys(mapping)
     -- Simple bascule flottant/géré. (Pas de `--grid` : il échoue sur une fenêtre gérée
     -- — « cannot apply grid layout to a managed window ». Pour centrer/placer une fois
     -- flottante, utiliser WindowSnap : ⌘⌥C, ⌘⌥ flèches, etc.)
-    toggle_float = function() self:_run({ "-m", "window", "--toggle", "float" }) end,
+    toggle_float = function()
+      self:_run({ "-m", "window", "--toggle", "float" }, function() self:_refreshBorderColor() end)
+    end,
     toggle_zoom   = function() self:_run({ "-m", "window", "--toggle", "zoom-fullscreen" }) end,
     layout_cycle  = function() self:_cycleLayout() end,
     layout_toggle = function() self:_toggleTiling() end,
