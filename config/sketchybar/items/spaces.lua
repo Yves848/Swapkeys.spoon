@@ -5,12 +5,17 @@ local app_icons = require("helpers.app_icons")
 
 local spaces = {}
 
+-- Noms affichés des bureaux (au lieu du numéro). Doivent correspondre aux labels yabai
+-- définis dans ~/.hammerspoon/init.lua (spoon.Yabai:setupDesktops). Au-delà de la liste,
+-- l'espace garde son numéro.
+local names = { "files", "web", "term", "code", "misc" }
+
 for i = 1, 10, 1 do
   local space = sbar.add("space", "space." .. i, {
     space = i,
     icon = {
       font = { family = settings.font.numbers },
-      string = i,
+      string = names[i] or tostring(i),
       padding_left = 15,
       padding_right = 8,
       color = colors.white,
