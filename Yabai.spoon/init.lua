@@ -76,6 +76,8 @@ obj.borderManagedColor = "0xff7aa2f7" -- fenêtre tuilée / gérée (bsp)  → b
 -- erreurs — les remonter en alerte est du bruit.
 local function isBenignError(msg)
   return msg:match("could not locate") ~= nil
+    -- retrait d'une règle d'attribution encore absente (premier chargement) : non-événement.
+    or msg:match("not found") ~= nil
 end
 
 function obj:_run(args, andThen)
@@ -176,6 +178,33 @@ function obj:_refreshBorderColor()
       or self.borderManagedColor
     hs.task.new(self.borders, nil, { "active_color=" .. color }):start()
   end)
+end
+
+--- Configure les bureaux : labellise les Spaces 1..N avec des labels STABLES et attribue des
+--- apps par label. À l'OUVERTURE, la fenêtre d'une app assignée est envoyée sur son bureau,
+--- où que ce Space se trouve (le label suit le Space, pas l'index → robuste au réordonnancement).
+--- `list` = table ORDONNÉE d'entrées `{ label = "...", app = "<regex>"? }` : le Space d'index i
+--- reçoit le label de la i-ème entrée ; `app` (optionnelle, motif yabai ex. "^Google Chrome$")
+--- est assignée à ce label. Idempotent (ré-appelable au reload : re-labelliser un Space avec
+--- son propre label est un no-op, et chaque règle — label `assign:<app>` — est retirée puis
+--- réajoutée).
+--- Prérequis : les N bureaux doivent EXISTER (yabai ne sait pas créer de Space sur macOS
+--- récent ; créez-les via Mission Control, macOS les mémorise). Labelliser un Space absent
+--- échoue sans gravité. Les règles n'agissent qu'à l'ouverture (fenêtres nouvelles) : une
+--- fenêtre déjà ouverte se renvoie à la main.
+function obj:setupDesktops(list)
+  for i, d in ipairs(list or {}) do
+    self:_run({ "-m", "space", tostring(i), "--label", d.label })
+    if d.app then
+      local lbl = "assign:" .. d.app
+      -- Retire l'ancienne règle (même label) puis (ré)ajoute — "not found" est bénin.
+      self:_run({ "-m", "rule", "--remove", lbl }, function()
+        self:_run({ "-m", "rule", "--add",
+          "label=" .. lbl, "app=" .. d.app, "space=" .. d.label })
+      end)
+    end
+  end
+  return self
 end
 
 --- Active la synchro « couleur de l'anneau ↔ état flottant/tuilé » sur les changements de
