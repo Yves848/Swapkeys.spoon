@@ -16,6 +16,7 @@
 ---   -- spoon.WindowSnap.yabai = "/opt/homebrew/bin/yabai"  -- chemin (optionnel, défaut Homebrew)
 ---   -- spoon.WindowSnap.gap = 8            -- marge en px autour de la fenêtre (optionnel, défaut 0)
 ---   -- spoon.WindowSnap.centerRatio = 0.6  -- taille de l'action "center" (0..1, défaut 0.6)
+---   -- spoon.WindowSnap.topInset = 40       -- réserve le haut pour une barre externe (SketchyBar)
 ---   spoon.WindowSnap:start()
 ---   local sn = { "cmd", "alt" }
 ---   spoon.WindowSnap:bindHotkeys({
@@ -40,6 +41,10 @@ obj.yabai = "/opt/homebrew/bin/yabai"
 obj.gap = 0
 -- Fraction de l'écran pour l'action "center" (fenêtre centrée occupant ce ratio).
 obj.centerRatio = 0.6
+-- Espace (px) réservé en haut de l'écran pour une barre externe (ex. SketchyBar). Utile
+-- quand la barre des menus native est masquée : `hs.screen:frame()` ne réserve alors plus
+-- rien en haut, donc les fenêtres « maximisées » passeraient sous la barre. 0 = désactivé.
+obj.topInset = 0
 
 -- Régions exprimées en fractions { x, y, w, h } de la zone utile de l'écran.
 local REGIONS = {
@@ -94,13 +99,20 @@ end
 function obj:_apply(frac)
   local win = hs.window.focusedWindow()
   if not win then return end
-  local sf = win:screen():frame() -- zone utile (hors barre des menus / Dock)
+  local scr = win:screen()
+  local sf = scr:frame()     -- zone utile (hors Dock ; hors barre native si affichée)
+  local ff = scr:fullFrame() -- écran complet (bord supérieur réel)
   local g = self.gap or 0
+  -- Réserve `topInset` px en haut pour une barre externe (SketchyBar…) : si la barre
+  -- native est masquée, `frame()` ne réserve plus rien en haut, donc on le fait ici.
+  -- `math.max` garde le comportement correct que la barre native soit affichée ou non.
+  local top = math.max(sf.y, ff.y + (self.topInset or 0))
+  local uw, uh = sf.w, (sf.y + sf.h) - top
   local target = {
-    x = sf.x + frac[1] * sf.w + g,
-    y = sf.y + frac[2] * sf.h + g,
-    w = frac[3] * sf.w - 2 * g,
-    h = frac[4] * sf.h - 2 * g,
+    x = sf.x + frac[1] * uw + g,
+    y = top + frac[2] * uh + g,
+    w = frac[3] * uw - 2 * g,
+    h = frac[4] * uh - 2 * g,
   }
   self:_ensureFloating(function()
     -- setFrame sans animation (0) → placement immédiat.

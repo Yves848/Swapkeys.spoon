@@ -47,6 +47,9 @@ yabai -m config normal_window_opacity     0.90
 yabai -m config window_opacity_duration   0.15
 # Ombres : uniquement sur les fenêtres flottantes (en mode manuel, ça les couvre toutes).
 yabai -m config window_shadow             float
+# Barre externe (SketchyBar, 40 px en haut) : réserve l'espace pour les fenêtres TUILÉES
+# (mode bsp). En mode manuel/float, c'est WindowSnap qui réserve le haut (topInset).
+yabai -m config external_bar              all:40:0
 # Animations de déplacement / redimensionnement (0 = instantané ; ~0.15 s = fluide).
 # ⚠ Nécessite l'autorisation « Enregistrement de l'écran » pour yabai (Réglages Système →
 #   Confidentialité et sécurité → Enregistrement de l'écran → activer yabai, puis relancer
